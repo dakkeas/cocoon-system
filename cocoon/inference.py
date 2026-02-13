@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from sklearn.cluster import KMeans
-import logging
-import logging
 import os
+from pathlib import Path
+import logging
 
 '''
 EXAMPLE USAGE:
@@ -41,7 +41,7 @@ class VisionSystem:
         CLASS_MAP (dict): Maps YOLO integer class IDs to human-readable labels ("NG", "G").
     """
 
-    def __init__(self, model_name="best.pt", model_dir="models",camera_index = 0):
+    def __init__(self, model_name="best.pt", model_dir="models"):
         """
         Initialize the VisionSystem, load the AI model, and configure grid settings.
 
@@ -53,18 +53,24 @@ class VisionSystem:
             FileNotFoundError: If the model file does not exist at the specified path.
             Exception: If YOLO fails to load (e.g., corrupted file or missing library).
         """
-        self.camera_index = camera_index
         
         # Construct the absolute path to the model to avoid "file not found" errors on boot
         # using os.getcwd() ensures we find the file relative to where the script is run
-        base_dir = os.getcwd() 
+        # base_dir = os.getcwd() 
+        # self.model_path = os.path.join(base_dir, model_dir, model_name)
+
+        # Get the folder of the current file (inference.py)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Build the full path to the model
         self.model_path = os.path.join(base_dir, model_dir, model_name)
         
-        # --- 1. Validation ---
-        if not os.path.isfile(self.model_path):
-            logger.critical(f"CRITICAL ERROR: Model file not found at {self.model_path}")
-            # We don't raise immediately here to allow the class to instantiate, 
-            # but check_health() will fail later.
+
+        if not os.path.exists(self.model_path):
+            raise FileNotFoundError(f"Model file not found: {self.model_path}")
+        
+        print(f"Loading model from {self.model_path}")
+        
         
         # --- 2. Configuration ---
         self.EXPECTED_ROWS = 12
@@ -73,9 +79,9 @@ class VisionSystem:
         # Mapping Class IDs (from training) to Labels.
         # CRITICAL: These IDs must match your data.yaml from Roboflow/YOLO training.
         self.CLASS_MAP = {
-            0: "NG",     # Not Good / Defective
+            0: "Empty",     # EMPTY
             1: "G",      # Good
-            2: "Empty"   # Empty Slot
+            2: "NG"   # NG
         }
 
         # --- 3. Model Loading ---
@@ -89,7 +95,7 @@ class VisionSystem:
             self.model = None
             raise e
 
-    def capture_image(self):
+    def capture_image(self, camera_index):
         """
         Captures a single high-resolution frame from the primary camera.
 
@@ -101,7 +107,7 @@ class VisionSystem:
             numpy.ndarray: The captured image (OpenCV format), or None if capture fails.
         """
         logger.info("Opening camera interface...")
-        cap = cv2.VideoCapture(self.camera_index)
+        cap = cv2.VideoCapture(camera_index)
         
         if not cap.isOpened():
             logger.error("Could not access the camera. Check ribbon cable or USB connection.")
@@ -279,6 +285,121 @@ class VisionSystem:
         logger.info("Grid mapping and classification complete.")
         return grid_output
 
+
+    def run_inference_from_folder(self, input_folder, output_folder):
+        """
+        Runs the Vision Pipeline on all images inside a folder.
+
+        Args:
+            input_folder (str): Path to folder containing images.
+            output_folder (str): Path where annotated images will be saved.
+
+        Returns:
+            dict: {
+                "image_name.jpg": {
+                    1: [...],
+                    2: [...],
+                    ...
+                },
+                ...
+            }
+        """
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.join(base_dir, '..')
+        
+        # Build the full path to the model
+        output_folder_path = os.path.join(root_dir,output_folder)
+        input_folder_path = os.path.join(root_dir,input_folder)
+
+
+        os.makedirs(output_folder_path, exist_ok=True)
+
+        supported_ext = (".jpg", ".jpeg", ".png", ".bmp")
+        image_files = [f for f in os.listdir(input_folder_path) if f.lower().endswith(supported_ext)]
+
+        all_results = {}
+
+        for image_name in image_files:
+            image_path = os.path.join(input_folder_path, image_name)
+            logger.info(f"Processing image: {image_name}")
+
+            frame = cv2.imread(image_path)
+            if frame is None:
+                logger.warning(f"Failed to load image: {image_name}")
+                continue
+
+            # --- YOLO Inference ---
+            results = self.model(frame, conf=0.25, verbose=False)
+
+            raw_detections = []
+            all_x = []
+            all_y = []
+
+            if len(results[0].boxes) > 0:
+                for box in results[0].boxes:
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+
+                    cls_id = int(box.cls[0].item())
+                    label = self.CLASS_MAP.get(cls_id, "Unknown")
+
+                    raw_detections.append({
+                        "cx": cx,
+                        "cy": cy,
+                        "label": label
+                    })
+
+                    all_x.append(cx)
+                    all_y.append(cy)
+
+                # ✅ Save Annotated Image
+                annotated_frame = results[0].plot()
+                output_path = os.path.join(output_folder_path, image_name)
+                cv2.imwrite(output_path, annotated_frame)
+
+            else:
+                logger.warning(f"No detections in image: {image_name}")
+                all_results[image_name] = self._generate_empty_grid()
+                continue
+
+            # --- Grid Validation ---
+            if len(all_x) < 12 or len(all_y) < 12:
+                logger.error(f"Not enough detections in {image_name}")
+                all_results[image_name] = self._generate_empty_grid()
+                continue
+
+            try:
+                kmeans_rows, row_ranks = self._get_cluster_map(all_y, self.EXPECTED_ROWS)
+                kmeans_cols, col_ranks = self._get_cluster_map(all_x, self.EXPECTED_COLS)
+            except Exception as e:
+                logger.error(f"Clustering failed for {image_name}: {e}")
+                all_results[image_name] = self._generate_empty_grid()
+                continue
+
+            # --- Fill Grid ---
+            grid_output = {
+                r: ["Empty"] * self.EXPECTED_COLS
+                for r in range(1, self.EXPECTED_ROWS + 1)
+            }
+
+            for det in raw_detections:
+                y_cluster = kmeans_rows.predict([[det['cy']]])[0]
+                row_num = row_ranks[y_cluster]
+
+                x_cluster = kmeans_cols.predict([[det['cx']]])[0]
+                col_num = col_ranks[x_cluster]
+
+                if 1 <= row_num <= 12 and 1 <= col_num <= 12:
+                    grid_output[row_num][col_num - 1] = det['label']
+
+            all_results[image_name] = grid_output
+            logger.info(f"Finished processing {image_name}")
+
+        logger.info("Folder inference complete.")
+        return all_results
+
+
     def _generate_empty_grid(self):
         """
         Fallback Method.
@@ -288,7 +409,7 @@ class VisionSystem:
         """
         return {r: ["Empty"] * self.EXPECTED_COLS for r in range(1, self.EXPECTED_ROWS + 1)}
 
-    def check_health(self):
+    def check_camera(self):
         """
         Perform a system health check. Used by the main orchestrator on boot.
         
@@ -305,11 +426,28 @@ class VisionSystem:
         cap.release()
         
         # Check Model
-        model_status = self.model is not None
 
         if not cam_status:
             logger.error("Health Check Failed: Camera not found.")
+
+        return cam_status 
+
+    def check_model(self):
+        """
+        Perform a system health check. Used by the main orchestrator on boot.
+        
+        Checks:
+        1. Is the Camera accessible?
+        2. Was the Model loaded into memory?
+
+        Returns:
+            bool: True if systems are go, False if critical failure.
+        """
+        
+        # Check Model
+        model_status = self.model is not None
+
         if not model_status:
             logger.error("Health Check Failed: Model not loaded.")
 
-        return cam_status and model_status
+        return model_status
