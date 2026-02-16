@@ -1,13 +1,15 @@
 
-# MOTOR DRIVER 1
-MOTOR_DRIVER_1_in1 = 27 
-MOTOR_DRIVER_1_in2 = 22
-MOTOR_DRIVER_1_en1 = 17
+MOTOR_CONFIG = {
+    # Driver 1
+    'D1_IN1': 27, 'D1_IN2': 22,
+    'D1_IN3': 27, 'D1_IN4': 22,
+    'D1_ENA': 17, 'D1_ENB': 17,
 
-# MOTOR DRIVER 2
-MOTOR_DRIVER_2_in1 = 27 
-MOTOR_DRIVER_2_in2 = 22
-MOTOR_DRIVER_2_en1 = 17
+    # Driver 2
+    'D2_IN1': 27, 'D2_IN2': 22,
+    'D2_IN3': 27, 'D2_IN4': 22,
+    'D2_ENA': 17, 'D2_ENB': 17
+}
 
 # IR SENSOR
 SENSOR_PIN = 5
