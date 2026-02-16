@@ -1,7 +1,7 @@
 
 # Import main classes from submodules
 from .inference import VisionSystem
-from .inference_simple import CocoonDetection
+
 
 # from .hardware.motor import MotorDriver
 # from .hardware.sensor import IR_Sensor
@@ -9,5 +9,5 @@ from .inference_simple import CocoonDetection
 
 # Define what 'from cocoon import *' imports
 # __all__ = ["VisionSystem", "MotorDriver", "IR_Sensor", "ServoController"]
-__all__ = ["VisionSystem" , "CocoonDetection"]
+__all__ = ["VisionSystem"]
 
