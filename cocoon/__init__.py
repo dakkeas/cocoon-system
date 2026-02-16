@@ -1,6 +1,6 @@
 
 # Import main classes from submodules
-from .inference_tflite import VisionSystem
+from .inference import VisionSystem
 from .inference_simple import CocoonDetection
 
 # from .hardware.motor import MotorDriver

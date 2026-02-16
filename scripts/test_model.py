@@ -1,22 +1,59 @@
-from cocoon import inference_simple
-import os
-
-# 1. Initialize
-# Make sure your model file is in the same folder or provide full path
-base_dir = os.path.dirname(os.path.abspath(__file__))
-
-model_path = os.path.join(base_dir,'..','cocoon/models/cocoon_model_v2_tflite/cocoon_model_v2_float32.tflite')
-test_images = os.path.join(base_dir, '..', 'test_dataset')
-output = os.path.join(base_dir, '..', 'output')
+from cocoon import VisionSystem
 
 
-vision = inference_simple.CocoonDetection(model_path=model_path)
+def main():
+    
+    print('running main loop')
+    
+    model = VisionSystem(
+        model_name ='cocoon_model_v2.pt',
+        model_dir ='models'
+    )
 
-# --- OPTION A: Run Live Webcam ---
-# vision.run_live_cam(0)
+    
+    if not model.check_model():
+        print('system health check failed')
+        return
 
-# --- OPTION B: Capture Single Frame ---
-# vision.capture_frame(camera_index=0, save_path="my_capture.jpg")
+    print('model is healthy....')
 
-# --- OPTION C: Run on Folder ---
-vision.process_folder(input_folder=test_images, output_folder=output)
+    grid_result = model.run_inference_from_folder('test_dataset','output')
+
+    # print('\n printing result ......')
+
+    # print('\n IMAGE 1')
+# 
+    # print(grid_result[0])
+
+    # print('\n IMAGE 2')
+
+    # print(grid_result[0])
+
+    first_image = list(grid_result.keys())[3]
+    print("First image:", first_image)
+
+    # Get its dictionary
+    first_image_dict = grid_result[first_image]
+
+    # Print all rows inside that image
+    for row_num, row_data in first_image_dict.items():
+        print(f"Row {row_num}: {row_data}")
+
+
+    
+    
+
+if __name__ == "__main__": 
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
