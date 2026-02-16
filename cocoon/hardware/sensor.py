@@ -5,6 +5,8 @@ import config
 
 class IR_Sensor:
     def __init__(self):
+
+
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(config.SENSOR_PIN, GPIO.IN)
         GPIO.setup(config.LED_PIN, GPIO.OUT)

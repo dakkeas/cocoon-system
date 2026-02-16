@@ -10,6 +10,8 @@ class MotorSystem:
         Driver 2: IN1-4, ENA, ENB
         """
 
+        self.set_direction = 'FORWARD'
+
         self.logger = logging.getLogger("Motor")
 
         GPIO.setmode(GPIO.BCM)
