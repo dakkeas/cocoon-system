@@ -10,7 +10,6 @@ D1_IN4 = 19
 D1_ENA = 12
 D1_ENB = 16
 
-
 # ---------------------------
 # DRIVER 2
 # ---------------------------
@@ -40,7 +39,7 @@ LED_PIN = 6
 MODEL_NAME = 'cocoon_model_v1'
 
 # CAMERA INDEX
-CAMERA_INDEX = 0
+CAMERA_INDEX = 1
 
 
 

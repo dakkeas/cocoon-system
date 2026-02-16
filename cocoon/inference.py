@@ -5,6 +5,8 @@ from sklearn.cluster import KMeans
 import os
 from pathlib import Path
 import logging
+from datetime import datetime
+import config
 
 '''
 EXAMPLE USAGE:
@@ -60,10 +62,11 @@ class VisionSystem:
         # self.model_path = os.path.join(base_dir, model_dir, model_name)
 
         # Get the folder of the current file (inference.py)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
         
         # Build the full path to the model
-        self.model_path = os.path.join(base_dir, model_dir, model_name)
+        self.model_path = os.path.join(self.base_dir, model_dir, model_name)
         
 
         if not os.path.exists(self.model_path):
@@ -95,7 +98,7 @@ class VisionSystem:
             self.model = None
             raise e
 
-    def capture_image(self, camera_index):
+    def capture_image(self):
         """
         Captures a single high-resolution frame from the primary camera.
 
@@ -107,7 +110,7 @@ class VisionSystem:
             numpy.ndarray: The captured image (OpenCV format), or None if capture fails.
         """
         logger.info("Opening camera interface...")
-        cap = cv2.VideoCapture(camera_index)
+        cap = cv2.VideoCapture(config.CAMERA_INDEX)
         
         if not cap.isOpened():
             logger.error("Could not access the camera. Check ribbon cable or USB connection.")
@@ -209,6 +212,14 @@ class VisionSystem:
             # If camera fails, return empty grid to prevent system crash
             return self._generate_empty_grid()
 
+        # os.makedirs(os.path.join(self.base_dir,"../output"), exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        raw_frame_path = os.path.join(self.base_dir, f"../output/frame_{timestamp}.jpg")
+        cv2.imwrite(raw_frame_path, frame)
+        logger.info(f"Captured frame saved: {raw_frame_path}")
+
         # --- Step 2: YOLO Inference ---
         logger.info("Running YOLO Inference on captured frame...")
         # conf=0.25: Only accept detections with >25% confidence
@@ -281,7 +292,12 @@ class VisionSystem:
                 # Note: col_num is 1-based, list index is 0-based, so we use [col_num - 1]
                 if 1 <= row_num <= 12 and 1 <= col_num <= 12:
                     grid_output[row_num][col_num - 1] = det['label']
-        
+
+        inferred_frame = results[0].plot()  # YOLO returns a plotted frame
+        inferred_frame_path = os.path.join(self.base_dir, f"../output/frame_inferred_{timestamp}.jpg")
+
+        cv2.imwrite(inferred_frame_path, inferred_frame)
+        logger.info(f"Inferred frame saved: {inferred_frame_path}")
         logger.info("Grid mapping and classification complete.")
         return grid_output
 
@@ -305,8 +321,7 @@ class VisionSystem:
             }
         """
 
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.join(base_dir, '..')
+        root_dir = os.path.join(self.base_dir, '..')
         
         # Build the full path to the model
         output_folder_path = os.path.join(root_dir,output_folder)
@@ -421,7 +436,7 @@ class VisionSystem:
             bool: True if systems are go, False if critical failure.
         """
         # Check Camera
-        cap = cv2.VideoCapture(self.camera_index)
+        cap = cv2.VideoCapture(config.CAMERA_INDEX)
         cam_status = cap.isOpened()
         cap.release()
         
