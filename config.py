@@ -36,16 +36,17 @@ SENSOR_PIN = 5
 LED_PIN = 6
 
 # MODEL NAME
-MODEL_NAME = 'cocoon_model_v1'
+MODEL_NAME = "/home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt"
 
 # CAMERA INDEX
-CAMERA_INDEX = 1
+CAMERA_INDEX = 0
 
 
 # buttons
 
 START_BUTTON_PIN = 17
 STOP_BUTTON_PIN = 22
+
 
 
 

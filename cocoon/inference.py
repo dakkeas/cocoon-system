@@ -43,7 +43,7 @@ class VisionSystem:
         CLASS_MAP (dict): Maps YOLO integer class IDs to human-readable labels ("NG", "G").
     """
 
-    def __init__(self, model_name="best.pt", model_dir="models"):
+    def __init__(self, model_name="best.pt", model_dir="models", camera_index=0):
         """
         Initialize the VisionSystem, load the AI model, and configure grid settings.
 
@@ -424,7 +424,7 @@ class VisionSystem:
         """
         return {r: ["Empty"] * self.EXPECTED_COLS for r in range(1, self.EXPECTED_ROWS + 1)}
 
-    def check_camera(self):
+    def check_camera(self):     
         """
         Perform a system health check. Used by the main orchestrator on boot.
         
@@ -437,14 +437,22 @@ class VisionSystem:
         """
         # Check Camera
         cap = cv2.VideoCapture(config.CAMERA_INDEX)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         cam_status = cap.isOpened()
         cap.release()
         
         # Check Model
-
-        if not cam_status:
-            logger.error("Health Check Failed: Camera not found.")
-
+        if cam_status:
+                ret, frame = cap.read()
+                if not ret:
+                        logger.error("Camera found, but failed to capture test frame.")
+                        cam_status = False
+                else:
+                        logger.info("Camera Health Check: PASSED")
+        else:
+                logger.error(f"Health Check Failed: Camera at index {config.CAMERA_INDEX} not found.")
+        cap.release()
         return cam_status 
 
     def check_model(self):

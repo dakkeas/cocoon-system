@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
 
 class ServoController:
-    def __init__(self, channels=12, pwm_freq=50):
+    def __init__(self, channels=16, pwm_freq=50):
         """
         channels: number of servo channels (default 12 for PCA9685)
         """
