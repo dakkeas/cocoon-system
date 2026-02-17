@@ -110,12 +110,12 @@ class MotorSystem:
         self._set_speed(0)
 
 
-    def start(self):
+    def start(self, speed):
 
         if self.set_direction == 'FORWARD':
-            self.forward()
+            self.forward(speed)
         elif self.set_direction == 'BACKWARD':
-            self.backward()
+            self.backward(speed)
 
     # =========================================
     # INTERNAL
