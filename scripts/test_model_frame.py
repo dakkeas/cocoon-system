@@ -1,4 +1,6 @@
 from cocoon import VisionSystem
+from cocoon.hardware import ServoController
+import time
 
 
 def main():
@@ -9,6 +11,8 @@ def main():
         model_name ='cocoon_model_v2.pt',
         model_dir ='models'
     )
+
+    servo = ServoController()
 
     
     if not model.check_model():
@@ -35,6 +39,18 @@ def main():
 
 
     print(grid_result)
+
+    for i in range(12):
+        
+        print(f'-------> running row {i}')
+        print(f'-------> {servo_array[i]}')
+        servo_array = grid_result[i]
+
+        servo._activate_servos(servo_array)
+
+        time.sleep(1)
+
+        print(f'-------> completed row {i}')
     
 
 if __name__ == "__main__": 
