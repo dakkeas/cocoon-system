@@ -3,11 +3,11 @@ import time
 import config
 
 
-
+motor_system = motor.MotorSystem()
 try:
     # Initialize the "Super Motor"
     # The class will detect that all PWMs are Pin 17 and only create one controller
-    motor_system = motor.MotorSystem(config.MOTOR_CONFIG)
+    
     # direction = 'FORWARD'
     direction = 'FORWARD'
     for x in range(5):
@@ -19,7 +19,7 @@ try:
         time.sleep(0.5)
         motor_system.stop()
 
-        time.sleep(5)
+        time.sleep(2)
         
 
         for y in range(1,13): # 12 instances
@@ -37,7 +37,7 @@ try:
         time.sleep(0.5)
         motor_system.stop()
 
-        time.sleep(5)
+        time.sleep(2)
 
         direction = 'BACKWARD' if direction == 'FORWARD' else 'FORWARD'
         print(f'-------------> Direction set to {direction}')

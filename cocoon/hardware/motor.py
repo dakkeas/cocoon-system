@@ -3,14 +3,14 @@ import logging
 import config
 
 class MotorSystem:
-    def __init__(self, config, pwm_freq=1000):
+    def __init__(self, pwm_freq=1000):
         """
         Simple 2x L298N motor system
         Driver 1: IN1-4, ENA, ENB
         Driver 2: IN1-4, ENA, ENB
         """
 
-        self.set_direction = 'FORWARD'
+        self.direction = 'FORWARD'
 
         self.logger = logging.getLogger("Motor")
 
@@ -62,6 +62,9 @@ class MotorSystem:
             self.pwms.append(pwm)
 
         self.logger.info("MotorSystem initialized (2 drivers, 4 motors).")
+    def set_direction(self, direction):
+        self.direction = direction.upper()
+        print(f'direction set to {self.direction}')
 
     # =========================================
     # MOVEMENT FUNCTIONS
@@ -112,9 +115,9 @@ class MotorSystem:
 
     def start(self, speed):
 
-        if self.set_direction == 'FORWARD':
+        if self.direction == 'FORWARD':
             self.forward(speed)
-        elif self.set_direction == 'BACKWARD':
+        elif self.direction == 'BACKWARD':
             self.backward(speed)
 
     # =========================================
