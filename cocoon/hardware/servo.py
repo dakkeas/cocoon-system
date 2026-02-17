@@ -1,6 +1,7 @@
 from adafruit_servokit import ServoKit
 import threading
 import time
+import config
 
 
 
@@ -37,14 +38,24 @@ class ServoController:
         Internal method to move servos.
         Only moves servos where row_data[i] == 'G'.
         """
-        if len(row_data) != self.channels:
-            raise ValueError(f"row_data must contain exactly {self.channels} elements.")
+        
+        # if len(row_data) != self.channels:
+        #   raise ValueError(f"row_data must contain exactly {self.channels} elements.")
 
         print("---------- activating servos ----------")
 
         try:
             # Move 'G' servos to 180°
-            for ch in range(self.channels):
+            for ch in config.SERVO_CHANNEL:
+                if self.stop_event.is_set():
+                    return
+                if row_data[ch] == 'G':
+                    self.kit.servo[ch].angle = 0
+
+            time.sleep(0.5)
+            
+            # Move 'G' servos back to 0°
+            for ch in config.SERVO_CHANNEL:
                 if self.stop_event.is_set():
                     return
                 if row_data[ch] == 'G':
@@ -52,17 +63,8 @@ class ServoController:
 
             time.sleep(0.5)
 
-            # Move 'G' servos back to 0°
-            for ch in range(self.channels):
-                if self.stop_event.is_set():
-                    return
-                if row_data[ch] == 'G':
-                    self.kit.servo[ch].angle = 0
-
-            time.sleep(0.5)
-
             # Release 'G' servos
-            for ch in range(self.channels):
+            for ch in config.SERVO_CHANNEL:
                 if row_data[ch] == 'G':
                     self.kit.servo[ch].angle = None
 
@@ -87,7 +89,7 @@ class ServoController:
         """Stop all servos immediately."""
         print("Stopping all servos...")
         self.stop_event.set()
-        for ch in range(self.channels):
+        for ch in config.SERVO_CHANNEL:
             self.kit.servo[ch].angle = None
 
 
