@@ -3,59 +3,61 @@ import os
 import platform
 import json
 import time
+import glob
 from datetime import datetime
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 
-# --- PATH SETUP ---
-current_dir = os.path.dirname(os.path.abspath(__file__)) 
-project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+# --- SMART PATH SETUP ---
+current_file = os.path.abspath(__file__)
+current_dir = os.path.dirname(current_file)
+project_root = os.path.abspath(os.path.join(current_dir, "../../../"))
+
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-IS_WINDOWS = platform.system() == "Windows"
+OUTPUT_DIR = os.path.join(project_root, "cocoon", "output")
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
 
-# --- INITIAL IMPORTS ---
+# --- IMPORTS ---
 try:
-    import config
-    from utils.inference import VisionSystem
+    # FIXED IMPORT
+    import cocoon.config as config
+    from cocoon.test_inference import TestVisionSystem 
 except ImportError as e:
-    print(f"\n❌ IMPORT ERROR: {e}")
+    print("-" * 40)
+    print(f"❌ IMPORT ERROR: {e}")
+    print(f"📍 Debug: Python is looking in: {project_root}")
+    print("-" * 40)
     sys.exit(1)
 
 app = Flask(__name__)
 CORS(app)
 
-# --- GLOBAL STATE ---
 system_state = {
     "sorting_active": False,
     "cocoon_grid": [0] * 144, 
     "stats": { "g_count": 0, "ng_count": 0, "empty_count": 0 },
-    "matrix_view": {},
-    "coordinate_map": {}
+    "last_scan_time": None 
 }
 
-# --- SYSTEM INITIALIZATION ---
-vision = None
 try:
-    models_folder = os.path.join(project_root, "models")
-    vision = VisionSystem(
+    print("🚀 Initializing TEST Vision System...")
+    vision = TestVisionSystem(
         model_name=config.MODEL_NAME, 
-        model_dir=models_folder, 
-        camera_index=-1 # Forces use of test_image.jpg
+        model_dir="models"
     )
-    print("✅ System Ready: Waiting for Dashboard...")
+    print("✅ System Ready (Test Mode).")
 except Exception as e:
-    print(f"❌ Vision Init Failed: {e}")
-
-# --- API ROUTES ---
+    print(f"❌ Init Failed: {e}")
 
 @app.route('/api/data', methods=['GET'])
 def get_data():
     stats = system_state["stats"]
     total = stats["g_count"] + stats["ng_count"] + stats["empty_count"]
-    real_cocoons = stats["g_count"] + stats["ng_count"]
-    rate = (stats["ng_count"] / real_cocoons * 100) if real_cocoons > 0 else 0
+    real = stats["g_count"] + stats["ng_count"]
+    rate = (stats["ng_count"] / real * 100) if real > 0 else 0
 
     return jsonify({
         "grid": system_state["cocoon_grid"],
@@ -64,74 +66,56 @@ def get_data():
         "empty_count": stats["empty_count"],
         "total": total,
         "defect_rate": round(rate, 1),
-        "active": system_state["sorting_active"]
+        "active": system_state["sorting_active"],
+        "last_scan_time": system_state["last_scan_time"]
     })
+
+@app.route('/api/latest_image')
+def get_latest_image():
+    try:
+        list_of_files = glob.glob(os.path.join(OUTPUT_DIR, '*.jpg'))
+        if not list_of_files:
+            return "No image found", 404
+        latest_file = max(list_of_files, key=os.path.getctime)
+        return send_file(latest_file, mimetype='image/jpeg')
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/api/action', methods=['POST'])
 def handle_action():
     data = request.get_json()
-    action = data.get('action') if data else None
+    action = data.get('action')
     
     if action == 'start':
-        print("\n▶ [SCANNING] Start command received...")
+        print("\n▶ [START] Scanning...")
         system_state["sorting_active"] = True
-        
         try:
-            # 1. AI Classification (Restored logic)
             grid_dict = vision.run_inference() 
             
-            # 2. Build Maps
-            matrix_view = {}
-            coord_map = {}
             flat_grid = []
             g, ng, empty = 0, 0, 0
-            
             for r in range(1, 13):
-                row_data = grid_dict[r]
-                matrix_view[f"Row {r:02}"] = " ".join([f"[{item:^5}]" for item in row_data])
-                
-                for c in range(1, 13):
-                    val = row_data[c-1]
-                    coord_map[f"[{r},{c}]"] = val
-                    flat_grid.append(1 if val == "G" else 2 if val == "NG" else 3)
-                
-                g += row_data.count("G")
-                ng += row_data.count("NG")
-                empty += row_data.count("Empty")
+                row_data = grid_dict.get(r, ["Empty"]*12)
+                for val in row_data:
+                    if val == "G": flat_grid.append(1); g += 1
+                    elif val == "NG": flat_grid.append(2); ng += 1
+                    else: flat_grid.append(3); empty += 1
 
-            # 3. Update State
-            system_state.update({
-                "cocoon_grid": flat_grid,
-                "matrix_view": matrix_view, 
-                "coordinate_map": coord_map,
-                "sorting_active": False # Done scanning
-            })
-            system_state["stats"].update({"g_count": g, "ng_count": ng, "empty_count": empty})
-
-            # 4. Save JSON
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"scan_{ts}.json"
-            with open(filename, 'w') as f:
-                json.dump(system_state, f, indent=4)
-            print(f"💾 Results saved to {filename}")
+            system_state["cocoon_grid"] = flat_grid
+            system_state["stats"] = {"g_count": g, "ng_count": ng, "empty_count": empty}
+            system_state["last_scan_time"] = time.time()
+            system_state["sorting_active"] = False
+            print("✅ Scan Complete.")
 
         except Exception as e:
-            print(f"❌ Scan Failed: {e}")
+            print(f"❌ Error: {e}")
             system_state["sorting_active"] = False
 
-    elif action == 'stop':
-        print("\n⏹ [STOP] System halted.")
-        system_state["sorting_active"] = False
-        return jsonify({"status": "success", "message": "Stopped"})
-
     elif action == 'reset':
-        print("\n↺ [RESET] Clearing data...")
-        system_state["sorting_active"] = False
+        print("\n↺ [RESET]")
         system_state["cocoon_grid"] = [0] * 144
         system_state["stats"] = { "g_count": 0, "ng_count": 0, "empty_count": 0 }
-        system_state["matrix_view"] = {}
-        system_state["coordinate_map"] = {}
-        return jsonify({"status": "success", "message": "Reset Complete"})
+        system_state["last_scan_time"] = None
 
     return jsonify({"status": "success"})
 
