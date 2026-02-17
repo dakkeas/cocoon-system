@@ -42,6 +42,12 @@ MODEL_NAME = 'cocoon_model_v1'
 CAMERA_INDEX = 1
 
 
+# buttons
+
+START_BUTTON_PIN = 17
+STOP_BUTTON_PIN = 22
+
+
 
 
 

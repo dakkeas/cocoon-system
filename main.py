@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------- MOTOR + SENSOR THREAD ---------------- #
-def sensor_motor_control(sensor, motors, trigger_color, stop_event, button, motor_direction):
+def sensor_motor_control(sensor, motors, trigger_color, stop_event, button):
     """
     Runs motor until sensor detects opposite color OR force stop is pressed.
     """
@@ -63,6 +63,7 @@ vision_system = inference.VisionSystem()
 motor_system = motor.MotorSystem()
 ir_sensor = sensor.IR_Sensor()
 servo_controller = servo.ServoController()
+
 # ---------------- MAIN LOOP LOGIC ---------------- #
 def run_main_loop(button):
 
@@ -87,7 +88,7 @@ def run_main_loop(button):
     results = inference.run_inference()
     logger.info("Inference completed.")
 
-    trigger_color = "white"
+    trigger_color = 1 # 1 = white ; 0 - black/none
 
     # 3. 12-cycle loop
     for i in range(12):
@@ -149,7 +150,7 @@ def run_main_loop(button):
 def main():
     logger.info("System booting...")
 
-    button = ButtonController(start_pin=17, stop_pin=27)
+    button = buttons.ButtonController()
 
     try:
         while True:

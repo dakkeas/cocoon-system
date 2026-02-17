@@ -2,12 +2,13 @@ import RPi.GPIO as GPIO
 import threading
 import logging
 import time
+import config
 
 logger = logging.getLogger(__name__)
 
 
 class ButtonController:
-    def __init__(self, start_pin=17, stop_pin=27):
+    def __init__(self, start_pin=config.START_BUTTON_PIN, stop_pin=config.STOP_BUTTON_PIN):
         self.start_pin = start_pin
         self.stop_pin = stop_pin
 
