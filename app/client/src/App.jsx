@@ -9,29 +9,27 @@ function App() {
     empty_count: 0,
     total: 0,
     defect_rate: 0,
-    active: false
+    active: false,
+    last_scan_time: null // New tracker for image updates
   })
 
-  // Automatic IP Detection: Connects to the Flask backend
+  // Automatic IP Detection
   const PI_SERVER_URL = `http://${window.location.hostname}:5000`;
 
   // --- DATA FETCHING LOOP ---
-  // This asks the Python Backend "What do you see?" every 200ms
   useEffect(() => {
     const interval = setInterval(() => {
       fetch('/api/data')
         .then(res => res.json())
         .then(jsonData => {
-          // Only update if the data is valid
           if (jsonData) {
             setData(jsonData);
           }
         })
         .catch(err => {
-          // Optional: Log errors if backend is offline
-          // console.error("Waiting for Backend...", err)
+           // console.error("Waiting for Backend...", err)
         })
-    }, 200) // Fast refresh rate for smooth updates
+    }, 500) // Changed to 500ms to reduce network load with images
     return () => clearInterval(interval)
   }, [PI_SERVER_URL])
 
@@ -43,12 +41,15 @@ function App() {
       body: JSON.stringify({ action: actionName })
     })
     .then(res => res.json())
-    .then(data => {
-      console.log(`Action ${actionName} sent!`, data);
-      // Immediate UI update for "Processing" badge
+    .then(resData => {
+      console.log(`Action ${actionName} sent!`);
+      // Optimistic Updates
       if (actionName === 'start') setData(prev => ({ ...prev, active: true }));
       if (actionName === 'stop') setData(prev => ({ ...prev, active: false }));
-      if (actionName === 'reset') setData(prev => ({ ...prev, active: false, g_count: 0, ng_count: 0, empty_count: 0, grid: Array(144).fill(0) }));
+      if (actionName === 'reset') setData(prev => ({ 
+        ...prev, active: false, g_count: 0, ng_count: 0, empty_count: 0, 
+        grid: Array(144).fill(0), last_scan_time: null 
+      }));
     })
     .catch(err => console.error("Failed to send action:", err));
   }
@@ -99,10 +100,26 @@ function App() {
       {/* CONTROLS */}
       <div className="controls">
         <div className="btn-group">
-          <button className="btn btn-start" onClick={() => sendAction('start')}>START</button>
+          <button className="btn btn-start" onClick={() => sendAction('start')}>START SCAN</button>
           <button className="btn btn-stop" onClick={() => sendAction('stop')}>STOP</button>
         </div>
         <button className="btn btn-reset" onClick={() => sendAction('reset')}>RESET BATCH</button>
+      </div>
+
+      {/* --- NEW IMAGE VIEWER --- */}
+      <div className="image-panel">
+        <h3>Live Inference View</h3>
+        {data.last_scan_time ? (
+          <img 
+            src={`${PI_SERVER_URL}/api/latest_image?t=${data.last_scan_time}`} 
+            className="captured-image" 
+            alt="AI Inference Result" 
+          />
+        ) : (
+          <div className="placeholder-box">
+            <span>Waiting for Scan...</span>
+          </div>
+        )}
       </div>
 
       {/* GRID */}
