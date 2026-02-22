@@ -43,7 +43,7 @@ class VisionSystem:
         CLASS_MAP (dict): Maps YOLO integer class IDs to human-readable labels ("NG", "G").
     """
 
-    def __init__(self, model_name="best.pt", model_dir="models", camera_index=0):
+    def __init__(self, model_name="cocoon_model_v2.pt", model_dir="models", camera_index=0):
         """
         Initialize the VisionSystem, load the AI model, and configure grid settings.
 

@@ -28,7 +28,7 @@ D2_ENB = 19
 # ==========================================
 
 PWM_FREQUENCY = 1000
-DEFAULT_SPEED = 70
+DEFAULT_SPEED = 50
 
 
 # IR SENSOR
@@ -41,11 +41,10 @@ MODEL_NAME = "/home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt"
 # CAMERA INDEX
 CAMERA_INDEX = 0
 
-
 # buttons
 
-START_BUTTON_PIN = 17
-STOP_BUTTON_PIN = 22
+START_BUTTON_PIN = 4
+STOP_BUTTON_PIN = 27
 
 # servo channel
 

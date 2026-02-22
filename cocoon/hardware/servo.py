@@ -52,7 +52,7 @@ class ServoController:
                 if row_data[ch] == 'G':
                     self.kit.servo[ch].angle = 0
 
-            time.sleep(0.5)
+            time.sleep(0.5) # duration for servo to move to position
             
             # Move 'G' servos back to 0°
             for ch in config.SERVO_CHANNEL:
@@ -61,14 +61,14 @@ class ServoController:
                 if row_data[ch] == 'G':
                     self.kit.servo[ch].angle = 180
 
-            time.sleep(0.5)
+            time.sleep(0.5) # duration for servo to move back
 
             # Release 'G' servos
             for ch in config.SERVO_CHANNEL:
                 if row_data[ch] == 'G':
                     self.kit.servo[ch].angle = None
 
-            time.sleep(0.1)
+            time.sleep(0.1) # duration for servo to release
 
         except Exception as e:
             print("Error activating servos:", e)

@@ -13,6 +13,8 @@ from flask_cors import CORS
 current_dir = os.path.dirname(os.path.abspath(__file__)) 
 # Go up 2 levels to get 'cocoon' folder
 cocoon_dir = os.path.dirname(os.path.dirname(current_dir)) 
+output_dir = os.path.join(cocoon_dir, "../output")
+
 # Go up 1 more to get project root (if needed)
 project_root = os.path.dirname(cocoon_dir)
 
