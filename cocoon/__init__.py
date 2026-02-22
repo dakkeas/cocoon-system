@@ -1,7 +1,7 @@
 
 from .inference import VisionSystem
-from .stream import StreamBridge
+from .flask import FlaskAPIClient
 
 
-__all__ = ["VisionSystem", "StreamBridge"]
+__all__ = ["VisionSystem", "FlaskAPIClient"]
 

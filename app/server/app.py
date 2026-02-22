@@ -1,231 +1,125 @@
-import sys
-import os
-import platform
-import json
-import time
-import glob
-from datetime import datetime
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request, send_file, Response
 from flask_cors import CORS
-
-# --- SMART PATH SETUP ---
-# Current: cocoon/app/server/app.py
-current_dir = os.path.dirname(os.path.abspath(__file__)) 
-# Go up 2 levels to get 'cocoon' folder
-cocoon_dir = os.path.dirname(os.path.dirname(current_dir)) 
-output_dir = os.path.join(cocoon_dir, "../output")
-
-# Go up 1 more to get project root (if needed)
-project_root = os.path.dirname(cocoon_dir)
-
-# Add paths so imports work
-sys.path.append(project_root)
-sys.path.append(cocoon_dir)
-
-# Where inference.py saves images
-OUTPUT_DIR = os.path.join(cocoon_dir, "output")
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
-
-IS_WINDOWS = platform.system() == "Windows"
-
-# ... (Keep your imports and path setup as they were) ...
-
-# --- IMPORTS ---
-try:
-    import config
-    from cocoon.inference import VisionSystem
-    
-    # We will try to load hardware, but if it fails, we fall back to Mocks
-    HARDWARE_AVAILABLE = False
-    if not IS_WINDOWS:
-        try:
-            from cocoon.hardware.motor import MotorSystem
-            from cocoon.hardware.servo import ServoController
-            from cocoon.hardware.sensor import IR_Sensor
-            HARDWARE_AVAILABLE = True
-            print("✅ Hardware Libraries Found")
-        except Exception as e:
-            print(f"⚠️ Hardware libs found but failed to init (Check I2C/Wires): {e}")
-    
-    # Define Mocks if hardware is missing or on Windows
-    if IS_WINDOWS or not HARDWARE_AVAILABLE:
-        if not IS_WINDOWS: print("🛡️ Falling back to MOCK hardware for testing")
-        class MotorSystem:
-            def __init__(self, *args): pass
-            def forward(self, s): print(f"[MOCK] Motor FWD {s}")
-            def stop(self): print("[MOCK] Motor STOP")
-        class ServoController:
-            def __init__(self, *args): pass
-            def start(self, data): print(f"[MOCK] Servos Active: {data}")
-        class IR_Sensor:
-            def __init__(self): pass
-            def read(self): return 0
-
-except ImportError as e:
-    print(f"\n❌ CRITICAL IMPORT ERROR: {e}")
-    sys.exit(1)
+import os, time, json, glob
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 
-# ... (Keep Global State as is) ...
+# --- Paths ---
+# OUTPUT_DIR = "/home/pi/cocoon_system/output"
+# if not os.path.exists(OUTPUT_DIR):
+#     os.makedirs(OUTPUT_DIR)
 
-# --- INITIALIZATION ---
-model_abs_path = os.path.join(cocoon_dir, "models")
-vision = VisionSystem(model_name=config.MODEL_NAME, model_dir=model_abs_path, camera_index=config.CAMERA_INDEX)
-
-# Define the Mock version here as a fallback
-class MockSystem:
-    def __init__(self, *args, **kwargs): pass
-    def forward(self, *args): print("[MOCK] Motor Moving")
-    def stop(self): print("[MOCK] Motor Stopped")
-    def start(self, *args): print("[MOCK] Servos Sequence Active")
-    def read(self): return 0
-
-# Safe Hardware Initialization
-try:
-    if HARDWARE_AVAILABLE and not IS_WINDOWS:
-        # Try real hardware
-        servos = ServoController()
-        motor = MotorSystem(config) 
-        ir_sensor = IR_Sensor()
-        print("🔌 Real Hardware Initialized")
-    else:
-        raise Exception("Hardware not requested or unavailable")
-except Exception as e:
-    # IF HARDWARE FAILS, WE USE THE MOCK CLASS
-    print(f"🤖 Hardware skipped/failed ({e}). Using MOCK classes.")
-    servos = MockSystem()
-    motor = MockSystem()
-    ir_sensor = MockSystem()
-
-# --- GLOBAL STATE ---
+# --- Global state ---
 system_state = {
     "sorting_active": False,
-    "cocoon_grid": [0] * 144, 
-    "stats": { "g_count": 0, "ng_count": 0, "empty_count": 0 },
-    "last_scan_time": None
-}
+    "cocoon_grid": [0]*144,
+    "stats": {"g_count":0, "ng_count":0, "empty_count":0},
+    "last_scan_time": None,
+    "latest_log": "",
+    "latest_dict": {},
+    "latest_image_path": None,
+    "live_frame_path": None
+} 
 
-# --- API ROUTES ---
+# ----------------------------
+# 1️⃣ Endpoint: Upload Inferred Image
+# ----------------------------
+@app.route('/api/upload_image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return {"status":"fail", "msg":"No file part"}, 400
+    file = request.files['image']
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = os.path.join(OUTPUT_DIR, f"inferred_{ts}.jpg")
+    file.save(filename)
+    system_state['latest_image_path'] = filename
+    return {"status":"success", "path": filename}
 
-@app.route('/api/data', methods=['GET'])
-def get_data():
-    stats = system_state["stats"]
-    total = stats["g_count"] + stats["ng_count"] + stats["empty_count"]
-    real_cocoons = stats["g_count"] + stats["ng_count"]
-    rate = (stats["ng_count"] / real_cocoons * 100) if real_cocoons > 0 else 0
+# ----------------------------
+# 2️⃣ Endpoint: Upload Live Camera Frame
+# ----------------------------
+@app.route('/api/upload_live_frame', methods=['POST'])
+def upload_live_frame():
+    if 'frame' not in request.files:
+        return {"status":"fail", "msg":"No frame file"}, 400
+    file = request.files['frame']
+    filename = os.path.join(OUTPUT_DIR, "live_frame.jpg")
+    file.save(filename)
+    system_state['live_frame_path'] = filename
+    return {"status":"success"}
 
-    return jsonify({
-        "grid": system_state["cocoon_grid"],
-        "g_count": stats["g_count"],
-        "ng_count": stats["ng_count"],
-        "empty_count": stats["empty_count"],
-        "total": total,
-        "defect_rate": round(rate, 1),
-        "active": system_state["sorting_active"],
-        "last_scan_time": system_state["last_scan_time"]
-    })
-
-@app.route('/api/latest_image')
-def get_latest_image():
-    """Serves the test image or the latest inferred result."""
-    try:
-        # Priority 1: Look for the most recent result generated by the AI
-        list_of_files = glob.glob(os.path.join(OUTPUT_DIR, 'frame_inferred_*.jpg'))
-        if list_of_files:
-            latest_file = max(list_of_files, key=os.path.getctime)
-            return send_file(latest_file, mimetype='image/jpeg')
-        
-        # Priority 2: Fallback to your raw test dummy
-        test_dummy = "/home/raspberrypi/cocoon_system/output/test.jpg"
-        if os.path.exists(test_dummy):
-            return send_file(test_dummy, mimetype='image/jpeg')
-            
-        return "No image found", 404
-    except Exception as e:
-        return str(e), 500
-
-@app.route('/api/action', methods=['POST'])
-def handle_action():
+# ----------------------------
+# 3️⃣ Endpoint: Upload Dictionary / JSON
+# ----------------------------
+@app.route('/api/upload_json', methods=['POST'])
+def upload_json():
     data = request.get_json()
-    action = data.get('action')
-    
-    if action == 'start':
-        print(f"\n▶ START COMMAND RECEIVED")
-        system_state["sorting_active"] = True
-        
-        try:
-            # 1. AI Classification
-            grid_dict = vision.run_inference() 
-            
-            # 2. Initialize temporary structures
-            flat_grid = []
-            coord_map = {}
-            matrix_view = {}
-            g, ng, empty = 0, 0, 0
-            
-            # 3. Process the 12x12 Grid
-            for r in range(1, 13):
-                row_items = []
-                row_data = grid_dict.get(r, ["Empty"]*12)
-                
-                for c_idx, val in enumerate(row_data):
-                    col = c_idx + 1
-                    # A. Populate Flat Grid (for simple React .map)
-                    # 1=Good, 2=NG, 3=Empty
-                    status_num = 1 if val == "G" else 2 if val == "NG" else 3
-                    flat_grid.append(status_num)
-                    
-                    # B. Populate Coordinate Map (for Hardware Accuracy)
-                    coord_map[f"[{r},{col}]"] = val
-                    
-                    # C. Update Counters
-                    if val == "G": g += 1
-                    elif val == "NG": ng += 1
-                    else: empty += 1
-                    
-                    # D. Build Matrix String Component
-                    display_val = " G " if val == "G" else "NG " if val == "NG" else " E "
-                    row_items.append(f"[ {display_val} ]")
+    if not data:
+        return {"status":"fail", "msg":"No JSON sent"}, 400
+    system_state['latest_dict'] = data
+    return {"status":"success"}
 
-                # E. Store Row String
-                row_key = f"Row {r:02d}"
-                matrix_view[row_key] = " ".join(row_items)
+# ----------------------------
+# 4️⃣ Endpoint: Upload Logs / Text
+# ----------------------------
+@app.route('/api/upload_log', methods=['POST'])
+def upload_log():
+    data = request.get_json()
+    log = data.get("log") if data else None
+    if not log:
+        return {"status":"fail", "msg":"No log sent"}, 400
+    system_state['latest_log'] = log
+    return {"status":"success"}
 
-            # 4. Update Global State
-            system_state["cocoon_grid"] = flat_grid
-            system_state["stats"] = {"g_count": g, "ng_count": ng, "empty_count": empty}
-            system_state["coordinate_map"] = coord_map
-            system_state["matrix_view"] = matrix_view
-            system_state["last_scan_time"] = time.time() 
 
-            # 5. Save Master JSON to file for Hardware/Audit
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            json_filename = os.path.join(OUTPUT_DIR, f"scan_{ts}.json")
-            with open(json_filename, 'w') as f:
-                json.dump(system_state, f, indent=4)
+# erich
 
-            system_state["sorting_active"] = False
-            print(f"✅ Scan Complete. Stats saved to {json_filename}")
 
-        except Exception as e:
-            print(f"❌ Scan Failed: {e}")
-            system_state["sorting_active"] = False
+# ----------------------------
+# 5️⃣ Endpoint: Get Latest Inferred Image
+# ----------------------------
+@app.route('/api/latest_image', methods=['GET'])
+def latest_image():
+    path = system_state.get('latest_image_path')
+    if path and os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "No image available", 404
 
-    elif action == 'reset':
-        system_state["cocoon_grid"] = [0] * 144
-        system_state["stats"] = { "g_count": 0, "ng_count": 0, "empty_count": 0 }
-        system_state["coordinate_map"] = {}
-        system_state["matrix_view"] = {}
-        system_state["last_scan_time"] = None
+# ----------------------------
+# 6️⃣ Endpoint: Get Live Frame
+# ----------------------------
+@app.route('/api/live_frame', methods=['GET'])
+def live_frame():
+    path = system_state.get('live_frame_path')
+    if path and os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "No live frame", 404
 
-    return jsonify({"status": "success"})
+# ----------------------------
+# 7️⃣ Endpoint: Get Latest JSON
+# ----------------------------
+@app.route('/api/latest_json', methods=['GET'])
+def latest_json():
+    return jsonify(system_state.get('latest_dict', {}))
 
+# ----------------------------
+# 8️⃣ Endpoint: Get Latest Log
+# ----------------------------
+@app.route('/api/latest_log', methods=['GET'])
+def latest_log():
+    return jsonify({"log": system_state.get('latest_log', '')})
+
+# ----------------------------
+# 9️⃣ Endpoint: Full System Status (Optional)
+# ----------------------------
+@app.route('/api/status', methods=['GET'])
+def status():
+    return jsonify(system_state)
+
+# ----------------------------
+# Run Flask
+# ----------------------------
 if __name__ == '__main__':
-    # Ensure output dir exists
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-        
     app.run(host='0.0.0.0', port=5000)

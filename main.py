@@ -2,11 +2,15 @@ import threading
 import time
 import logging
 import RPi.GPIO as GPIO
+import requests 
+import json
 
 # from .cocoon.hardware import buttons
 from cocoon.hardware import motor
 # from cocoon.hardware import servo
 from cocoon.hardware import buttons
+from cocoon.hardware import camera
+from cocoon import flask
 from cocoon import inference
 
 # ---------------- GPIO SAFETY ---------------- #
@@ -29,28 +33,65 @@ logger = logging.getLogger(__name__)
 
 vision_system = inference.VisionSystem()
 motor_system = motor.MotorSystem()
+camera = camera.CameraManager(config.CAMERA_INDEX)  # Initialize camera with index 0
 # servo_controller = servo.ServoController()
 button_controller = buttons.ButtonController()
+client = flask.FlaskAPIClient("http://localhost:5000")
+
+
+# ---------------- CAMERA FEED LOGIC ---------------- #
+def send_live_frame(camera, client):
+    frame = camera.get_frame()
+    if frame is None:
+        return False
+
+    # overwrite same file each time
+    live_frame_path = "../output/live_frame.jpg"
+    cv2.imwrite(live_frame_path, frame)
+
+    # send to Flask
+    client.send_live_frame(live_frame_path)
+    return True
+
+
+def live_feed_loop(camera, client):
+    while True:
+        send_live_frame(camera, client)
+        time.sleep(0.1)  # 10 FPS
+    
 
 # ---------------- MAIN LOOP LOGIC ---------------- #
 def run_main_loop(button):
     logger.info("All systems operational.")
 
-    motor_system.set_direction("FORWARD")
-    logger.info("Direction set to FORWARD")
+    client.send_log("All systems operational")
+    time.sleep(0.5)  # Short delay to ensure log is sent before inference starts
+    client.send_log("Main loop started. Running inference and motor control.")
+    # Upload log
 
-    results = vision_system.run_inference()
+    motor_system.set_direction("FORWARD")
+
+    # results = vision_system.run_inference()
+    results = vision_system._generate_empty_grid()
+    client.send_json(results)
+    client.send_log("Inference results sent to server.")
+
+
     print("Inference results:")
     print(results)
     logger.info("Inference completed.")
+    
 
-    normal_motor_run_duration = 0.083
-    halfway_motor_run_duration = 0.09
+    normal_motor_run_duration = 0.075
+    halfway_motor_run_duration = 0.0752
+    run_back_motor_run_duration = 0.625
+    motor_speed = 10
+    client.send_log("Running motors & servos based on inference results.")
 
     for i in range(12):
-        if i == 0:
+        if i == 0 or i == 11:
             logger.info("Initial cycle. Running motor for first time to set position to first row.")
-            motor_system.start(70)
+            motor_system.start(
             time.sleep(0.09)  # Run motor for 100ms to ensure it
             motor_system.stop()
 
@@ -66,9 +107,9 @@ def run_main_loop(button):
         # --- SERVO ---
         logger.info("Starting servo for cycle %d", i + 1)
         # servo_controller._activate_servo(servo_array)
-        logger.info("Servo finished for cycle %d", i + 1)
+        logger.info("Servo finished for cyce %d", i + 1)
 
-        if i == 0:
+        if i == 0 or i == 11:
             time.sleep(2) 
         else:
             time.sleep(1)
@@ -93,9 +134,14 @@ def run_main_loop(button):
         time.sleep(1)
 
     # Reverse direction after loop
-    motor_system.set_direction("BACKWARD")
-    logger.info("Direction set to BACKWARD")
+    # motor_system.direction = 'BACKWARD' if motor_system.direction == 'FORWARD' else 'FORWARD'
+    # motor_system.set_direction(motor_system.direction)
 
+    # logger.info(f"Direction set to {motor_system.direction}")
+    time.sleep(1)
+    motor_system.set_direction("BACKWARD")
+    motor_system.start(70)
+    time.sleep(run_back_motor_run_duration)
     motor_system.stop()
     # servo_controller.stop_all()
 
@@ -105,6 +151,8 @@ def run_main_loop(button):
 def main():
     logger.info("System booting...")
 
+    live_feed_thread = threading.Thread(target=live_feed_loop, args=(camera, client), daemon=True)
+    live_feed_thread.start()
 
     try:
         while True:

@@ -7,6 +7,8 @@ from pathlib import Path
 import logging
 from datetime import datetime
 import config
+import flask 
+from hardware import camera
 
 '''
 EXAMPLE USAGE:
@@ -24,6 +26,8 @@ grid_data = self.model.run_inference()
 
 # Initialize Logger to track system events and errors
 logger = logging.getLogger(__name__)
+client = flask.FlaskAPIClient("http://localhost:5000")
+camera = camera.CameraManager(config.CAMERA_INDEX)
 
 class VisionSystem:
     """
@@ -207,7 +211,8 @@ class VisionSystem:
                   }
         """
         # --- Step 1: Capture ---
-        frame = self.capture_image()
+        frame = camera.get_frame()
+
         if frame is None:
             # If camera fails, return empty grid to prevent system crash
             return self._generate_empty_grid()
@@ -219,6 +224,7 @@ class VisionSystem:
         raw_frame_path = os.path.join(self.base_dir, f"../output/frame_{timestamp}.jpg")
         cv2.imwrite(raw_frame_path, frame)
         logger.info(f"Captured frame saved: {raw_frame_path}")
+
 
         # --- Step 2: YOLO Inference ---
         logger.info("Running YOLO Inference on captured frame...")
@@ -295,8 +301,18 @@ class VisionSystem:
 
         inferred_frame = results[0].plot()  # YOLO returns a plotted frame
         inferred_frame_path = os.path.join(self.base_dir, f"../output/frame_inferred_{timestamp}.jpg")
-
         cv2.imwrite(inferred_frame_path, inferred_frame)
+
+        # sending over to flask
+
+        success = client.send_image(inferred_frame_path)
+
+        if success:
+            print("✅ Inferred image sent to Flask successfully")
+        else:
+            print("⚠️ Failed to send inferred image")
+
+
         logger.info(f"Inferred frame saved: {inferred_frame_path}")
         logger.info("Grid mapping and classification complete.")
         return grid_output

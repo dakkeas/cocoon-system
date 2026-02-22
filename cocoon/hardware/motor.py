@@ -74,6 +74,7 @@ class MotorSystem:
         """All 4 motors forward"""
 
         # Driver 1
+        self._set_speed(speed)
         GPIO.output(self.d1_in1, GPIO.HIGH)
         GPIO.output(self.d1_in2, GPIO.LOW)
         GPIO.output(self.d1_in3, GPIO.HIGH)
@@ -85,12 +86,12 @@ class MotorSystem:
         GPIO.output(self.d2_in3, GPIO.HIGH)
         GPIO.output(self.d2_in4, GPIO.LOW)
 
-        self._set_speed(speed)
 
     def backward(self, speed=100):
         """All 4 motors backward"""
 
         # Driver 1
+        self._set_speed(speed)
         GPIO.output(self.d1_in1, GPIO.LOW)
         GPIO.output(self.d1_in2, GPIO.HIGH)
         GPIO.output(self.d1_in3, GPIO.LOW)
@@ -102,7 +103,6 @@ class MotorSystem:
         GPIO.output(self.d2_in3, GPIO.LOW)
         GPIO.output(self.d2_in4, GPIO.HIGH)
 
-        self._set_speed(speed)
 
     def stop(self):
         """Stop all motors"""
