@@ -99,13 +99,13 @@ hr { border: 0; border-top: 1px solid #dcdde1; margin: 5px 0 20px 0; }
 .btn-stop { background-color: #e74c3c; }
 .btn-reset { background-color: #34495e; width: 100%; margin-top: 10px; }
 
-/* LOG WIDGET STYLES */
+/* --- LOG WIDGET STYLES (NEW) --- */
 .log-container {
   background: white;
   border-radius: 12px;
   padding: 15px;
   border: 1px solid #e1e4e8;
-  margin-bottom: 10px;
+  margin-top: 5px;
 }
 
 .log-container h3 {
@@ -117,28 +117,32 @@ hr { border: 0; border-top: 1px solid #dcdde1; margin: 5px 0 20px 0; }
 }
 
 .log-box {
-  background-color: #2c3e50; /* Dark Terminal Background */
+  background-color: #1e1e1e; /* Dark Terminal Background */
   color: #2ecc71; /* Green "Matrix" text */
   font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
+  font-size: 11px;
   padding: 10px;
   border-radius: 6px;
-  height: 120px; /* Fixed height for scrollability */
+  height: 100px; /* Narrow fixed height */
   overflow-y: auto; /* Enables scrolling */
   display: flex;
-  flex-direction: column-reverse; /* Newest logs at the top */
+  flex-direction: column; 
+  border: 2px solid #2c3e50;
 }
 
 .log-entry {
   padding: 2px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(46, 204, 113, 0.2);
+  word-wrap: break-word;
 }
 
 .log-placeholder {
   color: #95a5a6;
   text-align: center;
-  margin-top: 40px;
+  margin-top: 30px;
+  font-style: italic;
 }
+
 /* --- IMAGE PANEL --- */
 .image-panel {
   background: white;
@@ -153,13 +157,50 @@ hr { border: 0; border-top: 1px solid #dcdde1; margin: 5px 0 20px 0; }
   box-sizing: border-box; 
 }
 
-.image-panel h3 {
-  margin: 0 0 10px 0;
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.panel-header h3 {
+  margin: 0;
   font-size: 14px;
   color: #7f8c8d;
   font-weight: 700;
   text-transform: uppercase;
-  align-self: flex-start;
+}
+
+/* Live Indicator Animation */
+.live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+}
+
+.live-indicator::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background-color: #e74c3c;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
 }
 
 .captured-image {
@@ -186,7 +227,7 @@ hr { border: 0; border-top: 1px solid #dcdde1; margin: 5px 0 20px 0; }
   font-weight: 600;
 }
 
-/* GRID PANEL (Restored to original look) */
+/* GRID PANEL */
 .mountage-panel {
   background: white;
   border-radius: 12px;

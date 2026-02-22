@@ -10,7 +10,8 @@ function App() {
     total: 0,
     defect_rate: 0,
     active: false,
-    last_scan_time: null // New tracker for image updates
+    last_scan_time: null,
+    logs: [] // New Logs State
   })
 
   // Automatic IP Detection
@@ -29,7 +30,7 @@ function App() {
         .catch(err => {
            // console.error("Waiting for Backend...", err)
         })
-    }, 500) // Changed to 500ms to reduce network load with images
+    }, 500) 
     return () => clearInterval(interval)
   }, [PI_SERVER_URL])
 
@@ -48,7 +49,7 @@ function App() {
       if (actionName === 'stop') setData(prev => ({ ...prev, active: false }));
       if (actionName === 'reset') setData(prev => ({ 
         ...prev, active: false, g_count: 0, ng_count: 0, empty_count: 0, 
-        grid: Array(144).fill(0), last_scan_time: null 
+        grid: Array(144).fill(0), last_scan_time: null, logs: [] 
       }));
     })
     .catch(err => console.error("Failed to send action:", err));
@@ -106,9 +107,41 @@ function App() {
         <button className="btn btn-reset" onClick={() => sendAction('reset')}>RESET BATCH</button>
       </div>
 
-      {/* --- NEW IMAGE VIEWER --- */}
+      {/* --- SYSTEM LOG (NEW) --- */}
+      <div className="log-container">
+        <h3>System Process Log</h3>
+        <div className="log-box">
+            {data.logs && data.logs.length > 0 ? (
+                data.logs.map((log, index) => (
+                    <div key={index} className="log-entry">{log}</div>
+                ))
+            ) : (
+                <div className="log-placeholder">System Ready...</div>
+            )}
+        </div>
+      </div>
+
+      {/* --- LIVE CAMERA VIEW (NEW) --- */}
       <div className="image-panel">
-        <h3>Live Inference View</h3>
+        <div className="panel-header">
+            <h3>Live Camera View</h3>
+            <div className="live-indicator"> LIVE</div>
+        </div>
+        
+        {/* We use a timestamp query param to prevent caching if the stream restarts */}
+        <img 
+            src={`${PI_SERVER_URL}/api/video_feed`} 
+            className="captured-image" 
+            alt="Live Camera Feed" 
+            onError={(e) => {e.target.onerror = null; e.target.src="https://placehold.co/600x400?text=Camera+Offline"}}
+        />
+      </div>
+
+      {/* --- INFERENCE VIEW --- */}
+      <div className="image-panel">
+        <div className="panel-header">
+            <h3>AI Classification Result</h3>
+        </div>
         {data.last_scan_time ? (
           <img 
             src={`${PI_SERVER_URL}/api/latest_image?t=${data.last_scan_time}`} 
