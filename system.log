@@ -660,3 +660,223 @@ KeyError: 0
 2026-02-22 17:54:17,829 [INFO] System booting...
 2026-02-22 17:54:17,829 [INFO] Waiting for START button...
 2026-02-22 17:54:17,830 [INFO] Waiting for START button...
+2026-02-22 23:36:20,244 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:36:20,494 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:36:20,495 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-22 23:36:20,496 [INFO] START button pressed.
+2026-02-22 23:36:20,496 [INFO] Buttons initialized using polling (no edge detection).
+2026-02-22 23:36:20,497 [INFO] System booting...
+2026-02-22 23:36:20,497 [INFO] Waiting for START button...
+2026-02-22 23:36:20,498 [INFO] Waiting for START button...
+2026-02-22 23:36:20,498 [INFO] Start signal received.
+2026-02-22 23:36:20,498 [INFO] System state: RUNNING
+2026-02-22 23:36:20,499 [INFO] START pressed. Running main loop.
+2026-02-22 23:36:20,499 [INFO] All systems operational.
+2026-02-22 23:36:20,499 [INFO] Direction set to FORWARD
+2026-02-22 23:36:20,500 [INFO] Opening camera interface...
+2026-02-22 23:36:23,994 [INFO] Image captured successfully.
+2026-02-22 23:36:24,122 [INFO] Captured frame saved: /home/raspberrypi/cocoon_system/cocoon/../output/frame_20260222_233623.jpg
+2026-02-22 23:36:24,122 [INFO] Running YOLO Inference on captured frame...
+2026-02-22 23:36:25,969 [INFO] Inferred frame saved: /home/raspberrypi/cocoon_system/cocoon/../output/frame_inferred_20260222_233623.jpg
+2026-02-22 23:36:25,970 [INFO] Grid mapping and classification complete.
+2026-02-22 23:36:25,970 [INFO] Inference completed.
+2026-02-22 23:36:25,971 [INFO] Initial cycle. Running motor for first time to set position to first row.
+2026-02-22 23:36:26,061 [INFO] Cycle 1 / 12 started
+2026-02-22 23:36:26,061 [INFO] Starting servo for cycle 1
+2026-02-22 23:36:26,062 [INFO] Servo finished for cycle 1
+2026-02-22 23:36:28,062 [INFO] Starting motor for cycle 1
+2026-02-22 23:36:28,146 [INFO] Motor finished for cycle 1
+2026-02-22 23:36:29,146 [INFO] Cycle 2 / 12 started
+2026-02-22 23:36:29,146 [INFO] Starting servo for cycle 2
+2026-02-22 23:36:29,147 [INFO] Servo finished for cycle 2
+2026-02-22 23:36:30,147 [INFO] Starting motor for cycle 2
+2026-02-22 23:36:30,231 [INFO] Motor finished for cycle 2
+2026-02-22 23:36:31,232 [INFO] Cycle 3 / 12 started
+2026-02-22 23:36:31,232 [INFO] Starting servo for cycle 3
+2026-02-22 23:36:31,233 [INFO] Servo finished for cycle 3
+2026-02-22 23:36:31,339 [WARNING] FORCE STOP button pressed!
+2026-02-22 23:36:32,233 [INFO] Starting motor for cycle 3
+2026-02-22 23:36:32,317 [INFO] Motor finished for cycle 3
+2026-02-22 23:36:33,317 [INFO] Cycle 4 / 12 started
+2026-02-22 23:36:33,318 [WARNING] Force stop detected. Exiting run loop.
+2026-02-22 23:36:33,318 [INFO] Direction set to BACKWARD
+2026-02-22 23:36:33,318 [INFO] Run completed safely.
+2026-02-22 23:36:33,319 [INFO] System state: IDLE
+2026-02-22 23:36:33,319 [INFO] Button states reset.
+2026-02-22 23:36:33,319 [INFO] System reset. Waiting for next START.
+2026-02-22 23:36:33,819 [INFO] Waiting for START button...
+2026-02-22 23:36:33,820 [INFO] Waiting for START button...
+2026-02-22 23:36:40,349 [WARNING] Program terminated by user.
+2026-02-22 23:36:40,349 [INFO] Button GPIO cleaned up.
+2026-02-22 23:36:40,350 [INFO] GPIO cleaned up. Program exited safely.
+2026-02-22 23:45:16,628 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:45:16,761 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:45:16,762 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-22 23:45:41,564 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:45:41,700 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:45:41,701 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-22 23:46:38,068 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:46:38,201 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:46:38,202 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-22 23:49:18,875 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:49:19,009 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:49:19,010 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-22 23:50:48,608 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:50:48,739 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:50:48,740 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-22 23:54:58,810 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-22 23:54:59,105 [INFO] YOLO Model loaded successfully.
+2026-02-22 23:54:59,106 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-23 00:00:27,854 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-23 00:00:27,990 [INFO] YOLO Model loaded successfully.
+2026-02-23 00:00:27,991 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-23 00:03:06,622 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-23 00:03:06,753 [INFO] YOLO Model loaded successfully.
+2026-02-23 00:03:06,754 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-23 00:03:06,755 [INFO] Buttons initialized using polling (no edge detection).
+2026-02-23 00:03:06,755 [INFO] System booting...
+2026-02-23 00:03:06,756 [INFO] Waiting for START button...
+2026-02-23 00:03:06,756 [INFO] Waiting for START button...
+2026-02-23 00:03:12,113 [INFO] START button pressed.
+2026-02-23 00:03:12,115 [INFO] Start signal received.
+2026-02-23 00:03:12,115 [INFO] System state: RUNNING
+2026-02-23 00:03:12,116 [INFO] START pressed. Running main loop.
+2026-02-23 00:03:12,116 [INFO] All systems operational.
+2026-02-23 00:03:12,232 [INFO] System state: IDLE
+2026-02-23 00:03:12,238 [INFO] Button states reset.
+2026-02-23 00:03:12,239 [INFO] System reset. Waiting for next START.
+2026-02-23 00:03:12,740 [INFO] Waiting for START button...
+2026-02-23 00:03:12,740 [INFO] Waiting for START button...
+2026-02-23 00:03:17,431 [INFO] START button pressed.
+2026-02-23 00:03:17,432 [INFO] Start signal received.
+2026-02-23 00:03:17,441 [INFO] System state: RUNNING
+2026-02-23 00:03:17,442 [INFO] START pressed. Running main loop.
+2026-02-23 00:03:17,443 [INFO] All systems operational.
+2026-02-23 00:03:17,475 [INFO] System state: IDLE
+2026-02-23 00:03:17,475 [INFO] Button states reset.
+2026-02-23 00:03:17,476 [INFO] System reset. Waiting for next START.
+2026-02-23 00:03:17,977 [INFO] Waiting for START button...
+2026-02-23 00:03:17,977 [INFO] Waiting for START button...
+2026-02-23 00:03:18,234 [INFO] START button pressed.
+2026-02-23 00:03:18,234 [INFO] Start signal received.
+2026-02-23 00:03:18,235 [INFO] System state: RUNNING
+2026-02-23 00:03:18,235 [INFO] START pressed. Running main loop.
+2026-02-23 00:03:18,235 [INFO] All systems operational.
+2026-02-23 00:03:18,252 [INFO] System state: IDLE
+2026-02-23 00:03:18,252 [INFO] Button states reset.
+2026-02-23 00:03:18,252 [INFO] System reset. Waiting for next START.
+2026-02-23 00:03:18,385 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:03:18,752 [INFO] Waiting for START button...
+2026-02-23 00:03:18,753 [INFO] Waiting for START button...
+2026-02-23 00:03:32,659 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:03:33,160 [INFO] START button pressed.
+2026-02-23 00:03:33,161 [INFO] Start signal received.
+2026-02-23 00:03:33,162 [INFO] System state: RUNNING
+2026-02-23 00:03:33,162 [INFO] START pressed. Running main loop.
+2026-02-23 00:03:33,163 [INFO] All systems operational.
+2026-02-23 00:03:33,203 [INFO] System state: IDLE
+2026-02-23 00:03:33,203 [INFO] Button states reset.
+2026-02-23 00:03:33,204 [INFO] System reset. Waiting for next START.
+2026-02-23 00:03:33,612 [INFO] START button pressed.
+2026-02-23 00:03:33,704 [INFO] Waiting for START button...
+2026-02-23 00:03:33,705 [INFO] Waiting for START button...
+2026-02-23 00:03:33,705 [INFO] Start signal received.
+2026-02-23 00:03:33,706 [INFO] System state: RUNNING
+2026-02-23 00:03:33,706 [INFO] START pressed. Running main loop.
+2026-02-23 00:03:33,707 [INFO] All systems operational.
+2026-02-23 00:03:33,739 [INFO] System state: IDLE
+2026-02-23 00:03:33,740 [INFO] Button states reset.
+2026-02-23 00:03:33,740 [INFO] System reset. Waiting for next START.
+2026-02-23 00:03:33,814 [INFO] START button pressed.
+2026-02-23 00:03:34,215 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:03:34,241 [INFO] Waiting for START button...
+2026-02-23 00:03:34,241 [INFO] Waiting for START button...
+2026-02-23 00:03:34,242 [INFO] Start signal received.
+2026-02-23 00:03:34,242 [INFO] System state: RUNNING
+2026-02-23 00:03:34,242 [INFO] START pressed. Running main loop.
+2026-02-23 00:03:34,242 [INFO] All systems operational.
+2026-02-23 00:03:34,259 [INFO] System state: IDLE
+2026-02-23 00:03:34,260 [INFO] Button states reset.
+2026-02-23 00:03:34,260 [INFO] System reset. Waiting for next START.
+2026-02-23 00:03:34,566 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:03:34,760 [INFO] Waiting for START button...
+2026-02-23 00:03:34,760 [INFO] Waiting for START button...
+2026-02-23 00:03:34,767 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:04:05,317 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:04:05,719 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:04:06,070 [WARNING] STOP button pressed but no script is running.
+2026-02-23 00:04:06,672 [INFO] START button pressed.
+2026-02-23 00:04:06,672 [INFO] Start signal received.
+2026-02-23 00:04:06,673 [INFO] System state: RUNNING
+2026-02-23 00:04:06,673 [INFO] START pressed. Running main loop.
+2026-02-23 00:04:06,673 [INFO] All systems operational.
+2026-02-23 00:04:06,687 [INFO] System state: IDLE
+2026-02-23 00:04:06,688 [INFO] Button states reset.
+2026-02-23 00:04:06,688 [INFO] System reset. Waiting for next START.
+2026-02-23 00:04:07,188 [INFO] Waiting for START button...
+2026-02-23 00:04:07,189 [INFO] Waiting for START button...
+2026-02-23 00:04:07,675 [INFO] START button pressed.
+2026-02-23 00:04:07,675 [INFO] Start signal received.
+2026-02-23 00:04:07,676 [INFO] System state: RUNNING
+2026-02-23 00:04:07,676 [INFO] START pressed. Running main loop.
+2026-02-23 00:04:07,677 [INFO] All systems operational.
+2026-02-23 00:04:07,718 [INFO] System state: IDLE
+2026-02-23 00:04:07,719 [INFO] Button states reset.
+2026-02-23 00:04:07,719 [INFO] System reset. Waiting for next START.
+2026-02-23 00:04:08,220 [INFO] Waiting for START button...
+2026-02-23 00:04:08,221 [INFO] Waiting for START button...
+2026-02-23 00:04:13,569 [WARNING] Program terminated by user.
+2026-02-23 00:04:13,569 [INFO] Button GPIO cleaned up.
+2026-02-23 00:04:13,570 [INFO] GPIO cleaned up. Program exited safely.
+2026-02-23 00:04:59,754 [INFO] Loading YOLO model from /home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt...
+2026-02-23 00:04:59,886 [INFO] YOLO Model loaded successfully.
+2026-02-23 00:04:59,887 [INFO] MotorSystem initialized (2 drivers, 4 motors).
+2026-02-23 00:04:59,888 [INFO] Buttons initialized using polling (no edge detection).
+2026-02-23 00:04:59,888 [INFO] System booting...
+2026-02-23 00:04:59,888 [INFO] Waiting for START button...
+2026-02-23 00:04:59,889 [INFO] Waiting for START button...
+2026-02-23 00:05:04,096 [INFO] START button pressed.
+2026-02-23 00:05:04,096 [INFO] Start signal received.
+2026-02-23 00:05:04,097 [INFO] System state: RUNNING
+2026-02-23 00:05:04,097 [INFO] START pressed. Running main loop.
+2026-02-23 00:05:04,098 [INFO] All systems operational.
+2026-02-23 00:05:04,598 [INFO] Inference completed.
+2026-02-23 00:05:04,599 [INFO] Initial cycle. Running motor for first time to set position to first row.
+2026-02-23 00:05:04,690 [INFO] Cycle 1 / 12 started
+2026-02-23 00:05:04,691 [INFO] Starting servo for cycle 1
+2026-02-23 00:05:04,691 [INFO] Servo finished for cyce 1
+2026-02-23 00:05:06,691 [INFO] Starting motor for cycle 1
+2026-02-23 00:05:06,767 [INFO] Motor finished for cycle 1
+2026-02-23 00:05:07,768 [INFO] Cycle 2 / 12 started
+2026-02-23 00:05:07,769 [INFO] Starting servo for cycle 2
+2026-02-23 00:05:07,769 [INFO] Servo finished for cyce 2
+2026-02-23 00:05:08,769 [INFO] Starting motor for cycle 2
+2026-02-23 00:05:08,845 [INFO] Motor finished for cycle 2
+2026-02-23 00:05:09,845 [INFO] Cycle 3 / 12 started
+2026-02-23 00:05:09,846 [INFO] Starting servo for cycle 3
+2026-02-23 00:05:09,846 [INFO] Servo finished for cyce 3
+2026-02-23 00:05:10,847 [INFO] Starting motor for cycle 3
+2026-02-23 00:05:10,922 [INFO] Motor finished for cycle 3
+2026-02-23 00:05:11,923 [INFO] Cycle 4 / 12 started
+2026-02-23 00:05:11,924 [INFO] Starting servo for cycle 4
+2026-02-23 00:05:11,924 [INFO] Servo finished for cyce 4
+2026-02-23 00:05:12,924 [INFO] Starting motor for cycle 4
+2026-02-23 00:05:13,000 [INFO] Motor finished for cycle 4
+2026-02-23 00:05:14,000 [INFO] Cycle 5 / 12 started
+2026-02-23 00:05:14,001 [INFO] Starting servo for cycle 5
+2026-02-23 00:05:14,001 [INFO] Servo finished for cyce 5
+2026-02-23 00:05:15,001 [INFO] Starting motor for cycle 5
+2026-02-23 00:05:15,077 [INFO] Motor finished for cycle 5
+2026-02-23 00:05:16,078 [INFO] Cycle 6 / 12 started
+2026-02-23 00:05:16,078 [INFO] Starting servo for cycle 6
+2026-02-23 00:05:16,079 [INFO] Servo finished for cyce 6
+2026-02-23 00:05:17,079 [INFO] Starting motor for cycle 6
+2026-02-23 00:05:17,080 [INFO] Halfway point reached. Running motor for extended duration.
+2026-02-23 00:05:17,156 [INFO] Motor finished for cycle 6
+2026-02-23 00:05:17,318 [WARNING] FORCE STOP button pressed!
+2026-02-23 00:05:17,861 [INFO] System state: IDLE
+2026-02-23 00:05:17,861 [INFO] Button states reset.
+2026-02-23 00:05:17,862 [INFO] System reset. Waiting for next START.
+2026-02-23 00:05:17,862 [WARNING] Program terminated by user.
+2026-02-23 00:05:17,863 [INFO] Button GPIO cleaned up.
+2026-02-23 00:05:17,863 [INFO] GPIO cleaned up. Program exited safely.
