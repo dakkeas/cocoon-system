@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 function App() {
+  // Main System State
   const [data, setData] = useState({
     grid: Array(144).fill(0),
     g_count: 0,
@@ -10,9 +11,15 @@ function App() {
     total: 0,
     defect_rate: 0,
     active: false,
-    last_scan_time: null,
-    logs: [] // New Logs State
+    last_scan_id: null, // Used to detect if we need to reload the inference image
   })
+
+  // Separate state for logs (to maintain history locally)
+  const [logs, setLogs] = useState([])
+  const lastLogRef = useRef("") // Keeps track of the last log to prevent duplicates
+
+  // Separate state for the Live View ticker
+  const [liveTick, setLiveTick] = useState(Date.now())
 
   // Automatic IP Detection
   const PI_SERVER_URL = `http://${window.location.hostname}:5000`;
@@ -20,23 +27,56 @@ function App() {
   // --- DATA FETCHING LOOP ---
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch('/api/data')
+      
+      // 1. Fetch Full System Status
+      fetch('/api/status')
         .then(res => res.json())
         .then(jsonData => {
           if (jsonData) {
-            setData(jsonData);
+            
+            // Calculate derived metrics (Backend sends raw counts)
+            const g = jsonData.stats.g_count || 0
+            const ng = jsonData.stats.ng_count || 0
+            const empty = jsonData.stats.empty_count || 0
+            const total_processed = g + ng + empty
+            const rate = (g + ng) > 0 ? ((ng / (g + ng)) * 100).toFixed(1) : 0
+
+            setData({
+              grid: jsonData.cocoon_grid || Array(144).fill(0),
+              g_count: g,
+              ng_count: ng,
+              empty_count: empty,
+              total: total_processed,
+              defect_rate: rate,
+              active: jsonData.sorting_active,
+              last_scan_id: jsonData.latest_image_path // Use path as a unique ID for refresh
+            });
+
+            // 2. Handle Logs: Only add if the message is new
+            const incomingLog = jsonData.latest_log
+            if (incomingLog && incomingLog !== lastLogRef.current) {
+                setLogs(prev => [incomingLog, ...prev].slice(0, 50)) // Add to top, keep last 50
+                lastLogRef.current = incomingLog
+            }
           }
         })
         .catch(err => {
            // console.error("Waiting for Backend...", err)
         })
-    }, 500) 
+
+      // 3. Update Live View Ticker (Forces <img /> to reload every 0.5s)
+      setLiveTick(Date.now())
+
+    }, 500) // 500ms Loop
+
     return () => clearInterval(interval)
   }, [PI_SERVER_URL])
 
   // --- BUTTON CONTROL ---
+  // Note: Ensure your Python backend has an endpoint to handle these actions if needed.
+  // The provided app.py didn't show the logic for these, but we keep the UI ready.
   const sendAction = (actionName) => {
-    fetch(`${PI_SERVER_URL}/api/action`, {
+    fetch(`${PI_SERVER_URL}/api/action`, { // You might need to add this endpoint back to app.py
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: actionName })
@@ -44,13 +84,17 @@ function App() {
     .then(res => res.json())
     .then(resData => {
       console.log(`Action ${actionName} sent!`);
-      // Optimistic Updates
+      // Optimistic Updates for UI responsiveness
       if (actionName === 'start') setData(prev => ({ ...prev, active: true }));
       if (actionName === 'stop') setData(prev => ({ ...prev, active: false }));
-      if (actionName === 'reset') setData(prev => ({ 
-        ...prev, active: false, g_count: 0, ng_count: 0, empty_count: 0, 
-        grid: Array(144).fill(0), last_scan_time: null, logs: [] 
-      }));
+      if (actionName === 'reset') {
+          setData(prev => ({ 
+            ...prev, active: false, g_count: 0, ng_count: 0, empty_count: 0, 
+            grid: Array(144).fill(0), last_scan_id: null 
+          }));
+          setLogs([]); // Clear local logs on reset
+          lastLogRef.current = "";
+      }
     })
     .catch(err => console.error("Failed to send action:", err));
   }
@@ -107,12 +151,12 @@ function App() {
         <button className="btn btn-reset" onClick={() => sendAction('reset')}>RESET BATCH</button>
       </div>
 
-      {/* --- SYSTEM LOG (NEW) --- */}
+      {/* --- SYSTEM LOG --- */}
       <div className="log-container">
         <h3>System Process Log</h3>
         <div className="log-box">
-            {data.logs && data.logs.length > 0 ? (
-                data.logs.map((log, index) => (
+            {logs.length > 0 ? (
+                logs.map((log, index) => (
                     <div key={index} className="log-entry">{log}</div>
                 ))
             ) : (
@@ -121,16 +165,16 @@ function App() {
         </div>
       </div>
 
-      {/* --- LIVE CAMERA VIEW (NEW) --- */}
+      {/* --- LIVE CAMERA VIEW --- */}
+      {/* Refreshes every 0.5s driven by liveTick */}
       <div className="image-panel">
         <div className="panel-header">
             <h3>Live Camera View</h3>
-            <div className="live-indicator"> LIVE</div>
+            <div className="live-indicator">LIVE</div>
         </div>
         
-        {/* We use a timestamp query param to prevent caching if the stream restarts */}
         <img 
-            src={`${PI_SERVER_URL}/api/video_feed`} 
+            src={`${PI_SERVER_URL}/api/live_frame?t=${liveTick}`} 
             className="captured-image" 
             alt="Live Camera Feed" 
             onError={(e) => {e.target.onerror = null; e.target.src="https://placehold.co/600x400?text=Camera+Offline"}}
@@ -138,13 +182,14 @@ function App() {
       </div>
 
       {/* --- INFERENCE VIEW --- */}
+      {/* Only refreshes when the backend reports a new image path */}
       <div className="image-panel">
         <div className="panel-header">
             <h3>AI Classification Result</h3>
         </div>
-        {data.last_scan_time ? (
+        {data.last_scan_id ? (
           <img 
-            src={`${PI_SERVER_URL}/api/latest_image?t=${data.last_scan_time}`} 
+            src={`${PI_SERVER_URL}/api/latest_image?id=${data.last_scan_id}`} 
             className="captured-image" 
             alt="AI Inference Result" 
           />
