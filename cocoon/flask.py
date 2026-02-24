@@ -13,16 +13,17 @@ class FlaskAPIClient:
     def __init__(self, base_url: str = "http://localhost:5000"):
         self.base_url = base_url.rstrip("/")
 
-    def send_image(self, image_path: str) -> bool:
-        """Send an inferred image to Flask."""
+        
+    def send_image_path(self, image_path: str) -> bool:
+        """Send the full path of the image to Flask (no file bytes)."""
         try:
-            with open(image_path, "rb") as f:
-                files = {"image": f}
-                response = requests.post(f"{self.base_url}/api/upload_image", files=files)
+            data = {"path": image_path}
+            response = requests.post(f"{self.base_url}/api/upload_image_path", json=data)
             response.raise_for_status()
+            print("Successfully sent image path to Flask")
             return True
         except Exception as e:
-            print(f"⚠️ Failed to send inferred image: {e}")
+            print(f"Failed to send image path: {e}")
             return False
 
     def send_live_frame(self, frame_path: str) -> bool:
@@ -34,7 +35,7 @@ class FlaskAPIClient:
             response.raise_for_status()
             return True
         except Exception as e:
-            print(f"⚠️ Failed to send live frame: {e}")
+            print(f"Failed to send live frame: {e}")
             return False
 
     def send_json(self, data: Dict) -> bool:
@@ -42,9 +43,10 @@ class FlaskAPIClient:
         try:
             response = requests.post(f"{self.base_url}/api/upload_json", json=data)
             response.raise_for_status()
+            print('Successfully sent JSON data to Flask')
             return True
         except Exception as e:
-            print(f"⚠️ Failed to send JSON data: {e}")
+            print(f"Failed to send JSON data: {e}")
             return False
 
     def send_log(self, log_text: str) -> bool:
@@ -52,7 +54,20 @@ class FlaskAPIClient:
         try:
             response = requests.post(f"{self.base_url}/api/upload_log", json={"log": log_text})
             response.raise_for_status()
+            print('Successfully sent log to Flask')
             return True
         except Exception as e:
-            print(f"⚠️ Failed to send log: {e}")
+            print(f"Failed to send log: {e}")
             return False
+    
+    def get_command(self):
+        """Checks for commands (start/stop) from the web server."""
+        try:
+            # We use a short timeout so it doesn't slow down the hardware loop
+            resp = requests.get(f"{self.base_url}/api/get_command", timeout=0.2)
+            if resp.status_code == 200:
+                return resp.json().get("command")
+        except:
+            return None # Fail silently if server is busy
+        return None    
+    

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 function App() {
@@ -10,53 +10,113 @@ function App() {
     total: 0,
     defect_rate: 0,
     active: false,
-    last_scan_time: null // New tracker for image updates
+    last_scan_id: null
   })
 
-  // Automatic IP Detection
-  const PI_SERVER_URL = `http://${window.location.hostname}:5000`;
+  const [logs, setLogs] = useState([])
+  const lastLogRef = useRef("")
 
-  // --- DATA FETCHING LOOP ---
+  const PI_SERVER_URL = `http://${window.location.hostname}:5000`
+  const [latestImageSrc, setLatestImageSrc] = useState(null)
+
+  // 1. Update Image Source when a new Scan ID is received
+  useEffect(() => {
+    if (data.last_scan_id) {
+      console.log('Updating image source with scan ID:', data.last_scan_id)
+      // Force browser to fetch fresh image using cache-busting timestamp
+      setLatestImageSrc(
+        `${PI_SERVER_URL}/api/latest_image?t=${encodeURIComponent(data.last_scan_id)}&cache=${Date.now()}`
+      )
+    }
+  }, [data.last_scan_id, PI_SERVER_URL])
+
+  // 2. Main Polling Interval (Every 500ms)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch('/api/data')
+
+      // --- FETCH LATEST JSON (Grid + Stats) ---
+      fetch(`${PI_SERVER_URL}/api/latest_json`)
         .then(res => res.json())
         .then(jsonData => {
           if (jsonData) {
-            setData(jsonData);
+            const g = jsonData.stats?.g_count || 0
+            const ng = jsonData.stats?.ng_count || 0
+            const empty = jsonData.stats?.empty_count || 0
+            const total_processed = g + ng + empty
+            const rate = (g + ng) > 0 ? ((ng / (g + ng)) * 100).toFixed(1) : 0
+
+            setData(prev => ({
+              ...prev,
+              grid: jsonData.cocoon_grid || Array(144).fill(0),
+              g_count: g,
+              ng_count: ng,
+              empty_count: empty,
+              total: total_processed,
+              defect_rate: rate,
+              last_scan_id: jsonData.latest_image_path || prev.last_scan_id,
+              active: jsonData.sorting_active
+            }))
           }
         })
-        .catch(err => {
-           // console.error("Waiting for Backend...", err)
+        .catch(err => console.warn("Failed to fetch latest JSON:", err))
+
+      // --- FETCH LATEST LOG ---
+      fetch(`${PI_SERVER_URL}/api/latest_log`)
+        .then(res => res.json())
+        .then(logData => {
+          const incomingLog = logData.log
+          // Only update if the log is new and not empty
+          if (incomingLog && incomingLog !== lastLogRef.current) {
+            const time = new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            });
+            const formattedLog = `[${time}] ${incomingLog}`;
+
+            setLogs(prev => [formattedLog, ...prev].slice(0, 50))
+            lastLogRef.current = incomingLog
+          }
         })
-    }, 500) // Changed to 500ms to reduce network load with images
+        .catch(err => console.warn("Failed to fetch logs:", err))
+
+    }, 500)
+
     return () => clearInterval(interval)
   }, [PI_SERVER_URL])
 
-  // --- BUTTON CONTROL ---
+  // 3. Send Actions to Raspberry Pi
   const sendAction = (actionName) => {
     fetch(`${PI_SERVER_URL}/api/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: actionName })
     })
-    .then(res => res.json())
-    .then(resData => {
-      console.log(`Action ${actionName} sent!`);
-      // Optimistic Updates
-      if (actionName === 'start') setData(prev => ({ ...prev, active: true }));
-      if (actionName === 'stop') setData(prev => ({ ...prev, active: false }));
-      if (actionName === 'reset') setData(prev => ({ 
-        ...prev, active: false, g_count: 0, ng_count: 0, empty_count: 0, 
-        grid: Array(144).fill(0), last_scan_time: null 
-      }));
-    })
-    .catch(err => console.error("Failed to send action:", err));
+      .then(res => res.json())
+      .then(() => {
+        console.log(`Action "${actionName}" sent successfully.`)
+        if (actionName === 'start') setData(prev => ({ ...prev, active: true }))
+        if (actionName === 'stop') setData(prev => ({ ...prev, active: false }))
+        if (actionName === 'reset') {
+          setData({
+            grid: Array(144).fill(0),
+            g_count: 0,
+            ng_count: 0,
+            empty_count: 0,
+            total: 0,
+            defect_rate: 0,
+            active: false,
+            last_scan_id: null
+          })
+          setLogs([])
+          lastLogRef.current = ""
+        }
+      })
+      .catch(err => console.error("Failed to send action:", err))
   }
 
   return (
     <div className="container">
-      
       {/* HEADER */}
       <div className="header">
         <h1>SERA</h1>
@@ -67,7 +127,7 @@ function App() {
           </span>
         </div>
       </div>
-      
+
       <hr />
 
       {/* METRICS */}
@@ -106,14 +166,30 @@ function App() {
         <button className="btn btn-reset" onClick={() => sendAction('reset')}>RESET BATCH</button>
       </div>
 
-      {/* --- NEW IMAGE VIEWER --- */}
+      {/* SYSTEM LOG */}
+      <div className="log-container">
+        <h3>System Process Log</h3>
+        <div className="log-box">
+          {logs.length > 0 ? (
+            logs.map((log, index) => (
+              <div key={index} className="log-entry">{log}</div>
+            ))
+          ) : (
+            <div className="log-placeholder">System Ready...</div>
+          )}
+        </div>
+      </div>
+
+      {/* AI INFERENCE IMAGE */}
       <div className="image-panel">
-        <h3>Live Inference View</h3>
-        {data.last_scan_time ? (
-          <img 
-            src={`${PI_SERVER_URL}/api/latest_image?t=${data.last_scan_time}`} 
-            className="captured-image" 
-            alt="AI Inference Result" 
+        <div className="panel-header">
+          <h3>AI Classification Result</h3>
+        </div>
+        {latestImageSrc ? (
+          <img
+            src={latestImageSrc}
+            className="captured-image"
+            alt="AI Inference Result"
           />
         ) : (
           <div className="placeholder-box">
@@ -122,13 +198,13 @@ function App() {
         )}
       </div>
 
-      {/* GRID */}
+      {/* MOUNTAGE GRID */}
       <div className="mountage-panel">
         <h3>Mountage Grid</h3>
         <div className="heatmap-container">
           {data.grid.map((status, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`cocoon-cell cell-${status}`}
               title={`Slot ${index + 1}`}
             />

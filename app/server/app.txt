@@ -1,0 +1,127 @@
+from flask import Flask, jsonify, request, send_file, Response
+from flask_cors import CORS
+import os, time, json, glob
+from datetime import datetime
+
+app = Flask(__name__)
+CORS(app)
+
+# --- Paths ---
+# OUTPUT_DIR = "/home/pi/cocoon_system/output"
+# if not os.path.exists(OUTPUT_DIR):
+#     os.makedirs(OUTPUT_DIR)
+
+# --- Global state ---
+system_state = {
+    "sorting_active": False,
+    "cocoon_grid": [0]*144,
+    "stats": {"g_count":0, "ng_count":0, "empty_count":0},
+    "last_scan_time": None,
+    "latest_log": "",
+    "latest_dict": {},
+    "latest_image_path": None,
+    "live_frame_path": None
+} 
+
+# ----------------------------
+# 1️⃣ Endpoint: Upload Inferred Image
+# ----------------------------
+@app.route('/api/upload_image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return {"status":"fail", "msg":"No file part"}, 400
+    file = request.files['image']
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = os.path.join(OUTPUT_DIR, f"inferred_{ts}.jpg")
+    file.save(filename)
+    system_state['latest_image_path'] = filename
+    return {"status":"success", "path": filename}
+
+# ----------------------------
+# 2️⃣ Endpoint: Upload Live Camera Frame
+# ----------------------------
+@app.route('/api/upload_live_frame', methods=['POST'])
+def upload_live_frame():
+    if 'frame' not in request.files:
+        return {"status":"fail", "msg":"No frame file"}, 400
+    file = request.files['frame']
+    filename = os.path.join(OUTPUT_DIR, "live_frame.jpg")
+    file.save(filename)
+    system_state['live_frame_path'] = filename
+    return {"status":"success"}
+
+# ----------------------------
+# 3️⃣ Endpoint: Upload Dictionary / JSON
+# ----------------------------
+@app.route('/api/upload_json', methods=['POST'])
+def upload_json():
+    data = request.get_json()
+    if not data:
+        return {"status":"fail", "msg":"No JSON sent"}, 400
+    system_state['latest_dict'] = data
+    return {"status":"success"}
+
+# ----------------------------
+# 4️⃣ Endpoint: Upload Logs / Text
+# ----------------------------
+@app.route('/api/upload_log', methods=['POST'])
+def upload_log():
+    data = request.get_json()
+    log = data.get("log") if data else None
+    if not log:
+        return {"status":"fail", "msg":"No log sent"}, 400
+    system_state['latest_log'] = log
+    return {"status":"success"}
+
+
+# erich
+
+
+# ----------------------------
+# 5️⃣ Endpoint: Get Latest Inferred Image
+# ----------------------------
+@app.route('/api/latest_image', methods=['GET'])
+def latest_image():
+    path = request.args.get("path")  # Get path from query string
+    if not path:
+        path = system_state.get('latest_image_path')
+    if path and os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "No image available", 404
+
+# ----------------------------
+# 6️⃣ Endpoint: Get Live Frame
+# ----------------------------
+@app.route('/api/live_frame', methods=['GET'])
+def live_frame():
+    path = system_state.get('live_frame_path')
+    if path and os.path.exists(path):
+        return send_file(path, mimetype='image/jpeg')
+    return "No live frame", 404
+
+# ----------------------------
+# 7️⃣ Endpoint: Get Latest JSON
+# ----------------------------
+@app.route('/api/latest_json', methods=['GET'])
+def latest_json():
+    return jsonify(system_state.get('latest_dict', {}))
+
+# ----------------------------
+# 8️⃣ Endpoint: Get Latest Log
+# ----------------------------
+@app.route('/api/latest_log', methods=['GET'])
+def latest_log():
+    return jsonify({"log": system_state.get('latest_log', '')})
+
+# ----------------------------
+# 9️⃣ Endpoint: Full System Status (Optional)
+# ----------------------------
+@app.route('/api/status', methods=['GET'])
+def status():
+    return jsonify(system_state)
+
+# ----------------------------
+# Run Flask
+# ----------------------------
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000) 

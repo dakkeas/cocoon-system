@@ -65,14 +65,16 @@ class MotorSystem:
     def set_direction(self, direction):
         self.direction = direction.upper()
         print(f'direction set to {self.direction}')
+    
 
     # =========================================
     # MOVEMENT FUNCTIONS
     # =========================================
 
-    def forward(self, speed=100):
+    def forward(self, speed):
         """All 4 motors forward"""
 
+        self._set_speed(speed)
         # Driver 1
         GPIO.output(self.d1_in1, GPIO.HIGH)
         GPIO.output(self.d1_in2, GPIO.LOW)
@@ -85,10 +87,10 @@ class MotorSystem:
         GPIO.output(self.d2_in3, GPIO.HIGH)
         GPIO.output(self.d2_in4, GPIO.LOW)
 
-        self._set_speed(speed)
 
-    def backward(self, speed=100):
+    def backward(self, speed):
         """All 4 motors backward"""
+        self._set_speed(speed)
 
         # Driver 1
         GPIO.output(self.d1_in1, GPIO.LOW)
@@ -102,7 +104,6 @@ class MotorSystem:
         GPIO.output(self.d2_in3, GPIO.LOW)
         GPIO.output(self.d2_in4, GPIO.HIGH)
 
-        self._set_speed(speed)
 
     def stop(self):
         """Stop all motors"""

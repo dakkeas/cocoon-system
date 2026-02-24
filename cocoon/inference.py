@@ -1,4 +1,5 @@
 import cv2
+import random
 import numpy as np
 from ultralytics import YOLO
 from sklearn.cluster import KMeans
@@ -8,7 +9,7 @@ import logging
 from datetime import datetime
 import config
 from .flask import FlaskAPIClient
-from cocoon.hardware import camera
+# from cocoon.hardware import camera
 
 '''
 EXAMPLE USAGE:
@@ -27,7 +28,7 @@ grid_data = self.model.run_inference()
 # Initialize Logger to track system events and errors
 logger = logging.getLogger(__name__)
 client = FlaskAPIClient("http://localhost:5000")
-camera = camera.CameraManager(config.CAMERA_INDEX)
+# camera = camera.CameraManager(config.CAMERA_INDEX)
 
 class VisionSystem:
     """
@@ -211,10 +212,12 @@ class VisionSystem:
                   }
         """
         # --- Step 1: Capture ---
+        print('capturing image...')
         frame = self.capture_image()
 
         if frame is None:
             # If camera fails, return empty grid to prevent system crash
+            print('NO FRAME...')
             return self._generate_empty_grid()
 
         # os.makedirs(os.path.join(self.base_dir,"../output"), exist_ok=True)
@@ -302,15 +305,18 @@ class VisionSystem:
         inferred_frame = results[0].plot()  # YOLO returns a plotted frame
         inferred_frame_path = os.path.join(self.base_dir, f"../output/frame_inferred_{timestamp}.jpg")
         cv2.imwrite(inferred_frame_path, inferred_frame)
+        print(f'Successfully send file path of inferred image to Flask at: {inferred_frame_path}')
+
 
         # sending over to flask
 
-        success = client.send_image(inferred_frame_path)
+        print('Sending image to Flask')
+        success = client.send_image_path(inferred_frame_path)
 
         if success:
-            print("✅ Inferred image sent to Flask successfully")
+            print("Inferred image sent to Flask successfully")
         else:
-            print("⚠️ Failed to send inferred image")
+            print("Failed to send inferred image")
 
 
         logger.info(f"Inferred frame saved: {inferred_frame_path}")
@@ -434,12 +440,17 @@ class VisionSystem:
     def _generate_empty_grid(self):
         """
         Fallback Method.
-        Creates a 'safe' 12x12 grid filled with "Empty".
-        Used when the camera fails, model fails, or no objects are seen, 
+        Creates a 12x12 grid with random values: "G", "NG", or "Empty".
+        Used when the camera fails, model fails, or no objects are seen,
         ensuring the main program loop doesn't crash due to missing data.
         """
-        return {r: ["Empty"] * self.EXPECTED_COLS for r in range(1, self.EXPECTED_ROWS + 1)}
+        choices = ["G", "NG", "Empty"]
 
+        return {
+            r: [random.choice(choices) for _ in range(self.EXPECTED_COLS)]
+            for r in range(1, self.EXPECTED_ROWS + 1)
+        }
+    
     def check_camera(self):     
         """
         Perform a system health check. Used by the main orchestrator on boot.

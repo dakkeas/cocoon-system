@@ -32,8 +32,8 @@ DEFAULT_SPEED = 50
 
 
 # IR SENSOR
-SENSOR_PIN = 5
-LED_PIN = 6
+SENSOR_PIN = 1
+# LED_PIN = 6
 
 # MODEL NAME
 MODEL_NAME = "/home/raspberrypi/cocoon_system/cocoon/models/cocoon_model_v2.pt"
